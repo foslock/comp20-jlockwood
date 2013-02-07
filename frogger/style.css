@@ -2,15 +2,27 @@
     text-align: center;
 }
 
+#credit, a:visited, a:link, a:active {
+	text-align: center;
+	text-decoration: none;
+	color: rgba(255, 255, 255, 0.2);
+}
+
+#credit, a:hover {
+	text-align: center;
+	text-decoration: none;
+	color: rgba(255, 255, 255, 0.4);
+}
+
 canvas {
     background-color: #cb630a;
     padding: 5px;
     margin: 10px;
-    border-width: 60px;
+    border-width: 30px;
     border-color: #010101;
     border-style: solid;
 }
 
 body {
-    background-color: #128138;
+    background-color: #000000;
 }
