@@ -514,4 +514,5 @@ function start_game() {
 		}
 	};
 	document.onkeydown = checkArrows;
+	document.getElementById('game').focus();
 };
