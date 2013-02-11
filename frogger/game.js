@@ -27,6 +27,7 @@ function Frogger() {
 	spritesheet.src = "assets/frogger_sprites.png";
 	dead_frog.src = "assets/dead_frog.png";
 
+	// This returns the topmost pixel value in the associated "row" of the screen
 	var y_for_row_index = function(index) {
 		return 490 - (index * ROW_HEIGHT);
 	};
@@ -237,10 +238,10 @@ function Frogger() {
 		this.vehicles = [];
 
 		// Create vehicles
-		for (var i = 0; i < 5; i++) {
+		for (var i = 0; i < 2; i++) {
 			var rand_x = Math.random() * CANVAS_WIDTH;
 			var kind = i % 4;
-			for (var j = 0; j < 4; j++) {
+			for (var j = 0; j < 1; j++) {
 				var veh = new Vehicle();
 				veh.x = (rand_x + (j * veh.width * 4)) % CANVAS_WIDTH;
 				veh.y = y_for_row_index(i+1) + (ROW_HEIGHT - veh.height) / 2;
@@ -269,9 +270,9 @@ function Frogger() {
 		}
 
 		// Create logs
-		for (var i = 0; i < 5; i++) {
+		for (var i = 0; i < 1; i++) {
 			var rand_x = Math.random() * CANVAS_WIDTH;
-			for (var j = 0; j < 2; j++) {
+			for (var j = 0; j < 1; j++) {
 				var log = new FloatingLog();
 				log.x = (rand_x + (j * 178)) % CANVAS_WIDTH;
 				log.y = y_for_row_index(i+7) + (ROW_HEIGHT - log.height) / 2;
@@ -452,19 +453,14 @@ function Frogger() {
 		ctx.fillText("Score " + this.score + "   " + "Highscore " + this.highscore,
 			2, 560);
 
-		// Draw time rectangle
-		if (!this.frog.isDying && !this.is_gameover()) {
-			var perTime = (this.currentTime / (TIME_PER_LEVEL - (this.levelNumber * 50)));
-			var green = 100 + (155 * perTime);
-			var red = 100 + (155 - (155 * perTime));
-			ctx.fillStyle = "rgb(" + Math.floor(red) + "," + Math.floor(green) + ", 0)";
-			ctx.strokeStyle = "#cb630a";
-			ctx.fillRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2 * perTime, 30);
-			ctx.strokeRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2, 30);
-		}
-
+		// Draw Lives
 		for (var i = 0; i < this.currentLives; i++) {
 			ctx.drawImage(spritesheet, 12, 335, 19, 24, 4 + (i * 20), 527, 16, 21);
+		}
+
+		// Draw frog
+		if (!this.is_gameover()) {
+			this.frog.draw_frog(ctx);
 		}
 
 		// Draw vehicles
@@ -479,18 +475,28 @@ function Frogger() {
 			log.draw_log(ctx);
 		}
 
-		if (!this.is_gameover()) {
-			this.frog.draw_frog(ctx);
+		/*
+		// Draw time rectangle
+		if (!this.frog.isDying && !this.is_gameover()) {
+			var perTime = (this.currentTime / (TIME_PER_LEVEL - (this.levelNumber * 50)));
+			var green = 100 + (155 * perTime);
+			var red = 100 + (155 - (155 * perTime));
+			ctx.fillStyle = "rgb(" + Math.floor(red) + "," + Math.floor(green) + ", 0)";
+			ctx.strokeStyle = "#cb630a";
+			ctx.fillRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2 * perTime, 30);
+			ctx.strokeRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2, 30);
 		}
+		*/
 	};
 };
 
 // Jump in function from HTML
 function start_game() {
-	console.log("Starting game...");
 	var game = new Frogger();
 	game.initialize_obstacles();
+	game.draw_screen();
 
+	/*
 	var loop = setInterval(function() {
 		game.step_logic();
 		game.draw_screen();
@@ -514,5 +520,7 @@ function start_game() {
 		}
 	};
 	document.onkeydown = checkArrows;
+	*/
+	
 	document.getElementById('game').focus();
 };
