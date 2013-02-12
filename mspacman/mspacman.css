@@ -1,0 +1,8 @@
+body {
+	background: black;
+}
+
+#game_div {
+	text-align: center;
+	margin-top: 50px;
+}
