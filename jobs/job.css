@@ -1,0 +1,22 @@
+#list {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 500px;
+}
+
+.listing {
+	text-align: left;
+	background-color: #DDDDDD;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	border-radius: 10px;
+	box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.4);
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", 
+  	Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.listing:hover {
+	background-color: #EEEEEE;
+}
