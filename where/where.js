@@ -183,7 +183,27 @@ var updateRelativeDistance = function(person, dist) {
 }
 
 var make_request_for_json = function(url, success, error) {
-	var request = new XMLHttpRequest();
+	var request
+	try {
+  		request = new XMLHttpRequest();
+	}
+	catch (ms1) { // yes, exception handling is supported in JavaScript
+	  try {
+	    request = new ActiveXObject("Msxml2.XMLHTTP");
+	  }
+	  catch (ms2) {
+	    try {
+	      request = new ActiveXObject("Microsoft.XMLHTTP");
+	    }
+	    catch (ex) {
+	      request = null;
+	    }
+	  }
+	}
+	if (request == null) {
+		error("Error creating request object --Ajax not supported?");
+		return;
+	}
 	request.onreadystatechange = function() {
 		if (request.readyState == 4 && request.status == 200) {
 			var text = request.responseText;
