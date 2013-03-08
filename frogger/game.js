@@ -8,8 +8,12 @@ var DYING_TIME = 40; // Frames that frog will show dead symbol
 var FRAME_INTERVAL = 30; // Time (ms) between each game loop frame
 var ROW_HEIGHT = 36; // The height of each row you can move to in the game
 var SCORE_PER_ROW = 10;
-var SCORE_PER_LEVEL = 100;
-var TIME_PER_LEVEL = 800;
+var SCORE_PER_LEVEL = 50;
+var SCORE_PER_FIVE_LEVELS = 1000;
+var POINTS_PER_NEXT_LIFE = 10000;
+var TIME_PER_LEVEL = 1000;
+var LEVEL_UP_ALERT_TIMER = 50;
+var current_high_score = 0;
 
 var clamp = function(val, min, max) {
 	if (val < min) {
@@ -22,12 +26,31 @@ var clamp = function(val, min, max) {
 };
 
 function Frogger() {
+	var game = this;
+	this.doneLoading = function() {
+		// Nothing!
+	};
+	var loadedImageCount = 0;
 	var spritesheet = new Image();
 	var dead_frog = new Image();
+	var level_up = new Image();
+	this.game_over = new Image();
 	spritesheet.src = "assets/frogger_sprites.png";
 	dead_frog.src = "assets/dead_frog.png";
+	level_up.src = "assets/level_up.png";
+	this.game_over.src = "assets/game_over.png";
+	var loaded = function() {
+		loadedImageCount++;
+		if (loadedImageCount > 3) {
+			game.doneLoading();
+		}
+	};
 
-	// This returns the topmost pixel value in the associated "row" of the screen
+	spritesheet.onload = loaded;
+	dead_frog.onload = loaded;
+	level_up.onload = loaded;
+	this.game_over.onload = loaded;
+
 	var y_for_row_index = function(index) {
 		return 490 - (index * ROW_HEIGHT);
 	};
@@ -224,24 +247,24 @@ function Frogger() {
 
 	this.frog = new Frog();
 	this.frog.reset_location();
-	this.currentLives = 3;
+	this.currentLives = 5;
 	this.levelNumber = 1;
 	this.currentTime = (TIME_PER_LEVEL - (this.levelNumber * 50));
 	this.currentHighestRow = 0;
 	this.score = 0;
-	this.highscore = 0;
-	this.logs = [];
-	this.vehicles = [];
+	this.pointsUntilNextLife = POINTS_PER_NEXT_LIFE;
+	this.levelUpAlertTimer = 0;
 
 	this.initialize_obstacles = function() {
 		this.logs = [];
 		this.vehicles = [];
 
 		// Create vehicles
-		for (var i = 0; i < 2; i++) {
+		for (var i = 0; i < 5; i++) {
 			var rand_x = Math.random() * CANVAS_WIDTH;
 			var kind = i % 4;
-			for (var j = 0; j < 1; j++) {
+			var carCount = Math.floor(this.levelNumber / 2.0) + 1;
+			for (var j = 0; j < carCount; j++) {
 				var veh = new Vehicle();
 				veh.x = (rand_x + (j * veh.width * 4)) % CANVAS_WIDTH;
 				veh.y = y_for_row_index(i+1) + (ROW_HEIGHT - veh.height) / 2;
@@ -270,9 +293,9 @@ function Frogger() {
 		}
 
 		// Create logs
-		for (var i = 0; i < 1; i++) {
+		for (var i = 0; i < 5; i++) {
 			var rand_x = Math.random() * CANVAS_WIDTH;
-			for (var j = 0; j < 1; j++) {
+			for (var j = 0; j < 2; j++) {
 				var log = new FloatingLog();
 				log.x = (rand_x + (j * 178)) % CANVAS_WIDTH;
 				log.y = y_for_row_index(i+7) + (ROW_HEIGHT - log.height) / 2;
@@ -344,12 +367,19 @@ function Frogger() {
 			for (var i = 0; i < ROW_COUNT; i++) {
 				if (this.frog.y - this.frog.height/2 <= y_for_row_index(i) && i > this.currentHighestRow) {
 					this.score += SCORE_PER_ROW;
+					this.pointsUntilNextLife -= SCORE_PER_ROW;
 					this.currentHighestRow = i;
 				}
 			}
 		}
-		if (this.highscore < this.score) {
-			this.highscore = this.score;
+		if (current_high_score < this.score) {
+			current_high_score = this.score;
+		}
+		if (this.pointsUntilNextLife <= 0) {
+			this.pointsUntilNextLife = POINTS_PER_NEXT_LIFE;
+			if (this.currentLives < 4) {
+				this.currentLives++;
+			}
 		}
 	};
 
@@ -359,9 +389,15 @@ function Frogger() {
 			this.frog.y - this.frog.height/2 <= y_for_row_index(ROW_COUNT-1)) {
 			this.score += SCORE_PER_LEVEL;
 			this.frog.reset_location();
+			if (this.levelNumber % 5 == 0) {
+				this.score += SCORE_PER_FIVE_LEVELS;
+				this.pointsUntilNextLife -= SCORE_PER_FIVE_LEVELS;
+			}
 			this.levelNumber++;
 			this.initialize_obstacles();
 			this.currentTime = TIME_PER_LEVEL - (this.levelNumber * 50);
+			this.currentHighestRow = 0;
+			this.levelUpAlertTimer = LEVEL_UP_ALERT_TIMER;
 		}
 	};
 
@@ -408,10 +444,15 @@ function Frogger() {
 		} else if (!this.frog.isDying) {
 			this.kill_frog();
 		}
+
+		if (this.levelUpAlertTimer > 0) {
+			this.levelUpAlertTimer -= 1;
+		} else {
+			this.levelUpAlertTimer = 0;
+		}
 	};
 
 	this.draw_screen = function() {
-		// console.log("Draw!");
 		var canvas = document.getElementById('game');
 		var ctx = canvas.getContext('2d');
 		// Clear the screen
@@ -448,19 +489,25 @@ function Frogger() {
 		// Draw HUD
 		ctx.fillStyle = "rgb(50, 220, 50)";
 		ctx.font = "24px Helvetica-Bold";
-		ctx.fillText("Level " + this.levelNumber, 65, 544);
+		ctx.fillText("Level " + this.levelNumber, 105, 544);
 		ctx.font = "14px Helvetica-Bold";
-		ctx.fillText("Score " + this.score + "   " + "Highscore " + this.highscore,
+		ctx.fillText("Score " + this.score + "   " + "Highscore " + current_high_score,
 			2, 560);
 
-		// Draw Lives
-		for (var i = 0; i < this.currentLives; i++) {
-			ctx.drawImage(spritesheet, 12, 335, 19, 24, 4 + (i * 20), 527, 16, 21);
+		// Draw time rectangle
+		if (!this.frog.isDying && !this.is_gameover()) {
+			var perTime = (this.currentTime / (TIME_PER_LEVEL - (this.levelNumber * 50)));
+			var green = 100 + (155 * perTime);
+			var red = 100 + (155 - (155 * perTime));
+			ctx.fillStyle = "rgb(" + Math.floor(red) + "," + Math.floor(green) + ", 0)";
+			ctx.strokeStyle = "#cb630a";
+			var timeXstart = CANVAS_WIDTH/2 + 40;
+			ctx.fillRect(timeXstart - 4, 528, (CANVAS_WIDTH-timeXstart) * perTime, 30);
+			ctx.strokeRect(timeXstart - 4, 528, (CANVAS_WIDTH-timeXstart), 30);
 		}
 
-		// Draw frog
-		if (!this.is_gameover()) {
-			this.frog.draw_frog(ctx);
+		for (var i = 0; i < this.currentLives; i++) {
+			ctx.drawImage(spritesheet, 12, 335, 19, 24, 4 + (i * 20), 527, 16, 21);
 		}
 
 		// Draw vehicles
@@ -475,18 +522,14 @@ function Frogger() {
 			log.draw_log(ctx);
 		}
 
-		/*
-		// Draw time rectangle
-		if (!this.frog.isDying && !this.is_gameover()) {
-			var perTime = (this.currentTime / (TIME_PER_LEVEL - (this.levelNumber * 50)));
-			var green = 100 + (155 * perTime);
-			var red = 100 + (155 - (155 * perTime));
-			ctx.fillStyle = "rgb(" + Math.floor(red) + "," + Math.floor(green) + ", 0)";
-			ctx.strokeStyle = "#cb630a";
-			ctx.fillRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2 * perTime, 30);
-			ctx.strokeRect(CANVAS_WIDTH/2 - 4, 528, CANVAS_WIDTH/2, 30);
+		if (!this.is_gameover()) {
+			this.frog.draw_frog(ctx);
 		}
-		*/
+
+		if (this.levelUpAlertTimer > 0) {
+			ctx.drawImage(level_up, 0, 0, 345, 37,
+				CANVAS_WIDTH/2 - level_up.width/2, CANVAS_HEIGHT/2 + this.levelUpAlertTimer, 345, 37);
+		}
 	};
 };
 
@@ -494,18 +537,26 @@ function Frogger() {
 function start_game() {
 	var game = new Frogger();
 	game.initialize_obstacles();
-	game.draw_screen();
 
-	/*
-	var loop = setInterval(function() {
+	var intervalLoop = null;
+
+	var game_loop = function() {
 		game.step_logic();
 		game.draw_screen();
 
 		if (game.is_gameover()) {
-			// clearInterval(loop);
+			clearInterval(intervalLoop);
+			var canvas = document.getElementById('game');
+			var ctx = canvas.getContext('2d');
+			ctx.drawImage(game.game_over, CANVAS_WIDTH/2 - 200, CANVAS_HEIGHT/2 + 50);
 		}
 
-	}, FRAME_INTERVAL);
+	};
+
+	game.doneLoading = function() {
+		// Start the game loop in an interval
+		intervalLoop = setInterval(game_loop, FRAME_INTERVAL);
+	}
 
 	checkArrows = function(e) {
 		e = e || window.event;
@@ -519,8 +570,20 @@ function start_game() {
 			game.move_frog("down");
 		}
 	};
+
 	document.onkeydown = checkArrows;
-	*/
-	
+	document.getElementById('game').onclick = function() {
+		if (game.is_gameover()) {
+			// Restart the game on click
+			game = new Frogger();
+			game.initialize_obstacles();
+			intervalLoop = setInterval(game_loop, FRAME_INTERVAL);
+		}
+	}
+
+	addSwipeListener(document.getElementById('game'), function(e) {
+		game.move_frog(e.direction);
+    });
+
 	document.getElementById('game').focus();
 };
