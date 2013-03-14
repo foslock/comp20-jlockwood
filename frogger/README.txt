@@ -2,6 +2,7 @@ Foster Lockwood
 COMP20 - Assignment 4
 
 1. This is the updated version of Frogger, a more interactive (and fun) version of what I implemented in assigment 2. Use the arrow keys to move Frogger around, or swipes if you are on a touch screen device. I've implemented the basic scoring system and the rest of the basic requirements, here is a list of additional features:
+- Frogger is animated when he jumps
 - The timer counts down (and gets faster as you beat more levels!)
 - The 'dead_frog.png' sprite shows and animates when the frog has died
 - The levels slowly get harder (more cars, less time) as you level up
