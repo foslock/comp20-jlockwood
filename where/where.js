@@ -279,7 +279,7 @@ var place_stations = function(map) {
 }
 
 var retrieve_redline_data = function(success, error) {
-	make_request_for_json("http://mbtamap-cedar.herokuapp.com/mapper/redline.json",
+	make_request_for_json("http://mbtamap.herokuapp.com/mapper/redline.json",
 		success, error);
 };
 
