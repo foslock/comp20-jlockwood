@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Security Report - COMP20</title>
+	<link rel="stylesheet" href="main.css">
+</head>
+<body>
+<h1>Security Report</h1>
+<h3 class="header">Introduction:</h3>
+<p class="description">This product is called ScoreCenter. It is a web-based backend that stores persistent data about highscores from online games. These scores are sent via a HTTP POST to an API endpoint, and can be retrieved with a simple GET. There is also a simple web interface that shows the scores in the database categorized by game. Additionally, you can search for a particular user's scores. I was hired to find security holes in the product.</p>
+<h3 class="header">Methodology:</h3>
+<p class="description">
+<ul>
+	<li>At first I looked through the source code to see if there were any glaring errors that might lead to security holes.</li>
+	<li>Next I ran the server code locally (had to create a local database) and played around with the API endpoints using RESTClient. It allows me to make any kind of HTTP requests with custom input.</li>
+	<li>After skimming the code and testing out the expected functionality of the backend, I specifically searched the code (particularly at the API endpoints) for opportunities for mal-formed input to cause problems.</li>
+</ul>
+</p>
+<h3 class="header">Abstract of Findings:</h3>
+<p class="description">There were a few problems with this backend. By not validating input or limiting access to the API endpoints, the database storing the score data could easily be filled beyond capacity leading to overage costs and access outages. The effort needed to rid the server of these issues is minimal and should be acted upon immediately.</p>
+<h3 class="header">Issues Found (4):</h3>
+<p class="description">
+	<ul>
+		<li><strong>Issue 1:</strong> Format Mismatch</li>
+		<li><strong>Location:</strong> POST "/submit.json"</li>
+		<li><strong>Severity:</strong> Low</li>
+		<li><strong>Description:</strong> When submitting data in JSON format to be stored in the database, the HTTP response is in plain text, not JSON. Although it is not required, it is expected that the format of the input matches the output.</li>
+		<li><strong>Resolution:</strong> Change "response.send(...)" to "response.json(...)".</li>
+	</ul>
+	<ul>
+		<li><strong>Issue 2:</strong> No Storage Limit</li>
+		<li><strong>Location:</strong> POST "/submit.json"</li>
+		<li><strong>Severity:</strong> Medium</li>
+		<li><strong>Description:</strong> A user of this API can submit data as many times as they want, using the same user name and data. The MongoDB database is limited to a certain total size, and anything above that incurs charges to the administrator. If a user wanted to, they could spam the input and fill the data base up past this limit.</li>
+		<li><strong>Resolution:</strong> Limit the number of entries per username, or limit the total database size and refuse entries if no room left.</li>
+	</ul>
+	<ul>
+		<li><strong>Issue 3:</strong> No POST Data Limit</li>
+		<li><strong>Location:</strong> POST "/submit.json"</li>
+		<li><strong>Severity:</strong> Medium</li>
+		<li><strong>Description:</strong> When a user POSTs data to this endpoint, it stores the data directly from the HTTP request. A user could send a long (and big) Base64 encoded file as a string and store large amount of data in this database that's meant for very small entries.</li>
+		<li><strong>Resolution:</strong> Check the size of the data given in the request before storing into the database. Reject anything too large.</li>
+	</ul>
+	<ul>
+		<li><strong>Issue 4:</strong> Cross Site Scripting Vulnerability</li>
+		<li><strong>Location:</strong> "web.js", Lines 22-26</li>
+		<li><strong>Severity:</strong> Medium</li>
+		<li><strong>Description:</strong> The server allows for any server with ANY origin (using the '*' wildcard) to make HTTP requests to this backend. It seems necessary, since other sites with their games need to be able to POST high scores, but it is unsecure to allow entirely free access.</li>
+		<li><strong>Resolution:</strong> APIs run by companies typically have an API account system that requires sign up and verified email before you can access the API endpoints. You are given an API token of some sort that is verified for all API calls. This would allow you to restrict access to those requests only with valid tokens, throwing out all other input (that could potentially harm your database).</li>
+	</ul>
+</p>
+<h3 class="header">Conclusion:</h3>
+<p class="description">Given that this project was created without any security training, I'd say that this is a fine example of a basic backend. But, once you go a little deeper and start to analyze the safety of the database, and how malicious attacks could affect the project, it quickly is frightening. If this were a real product, I would suggest following the resolutions proposed above and using a fuzzer (a tool that barrages your API with somewhat randomly formed input) to make sure that the load can be handled.</p>
+</body>
+<br/>
+<p class="footer">Written by Foster Lockwood - 2013</p>
+</html>
